@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin</title>
+</head>
+<body>
+
+Hello ADMIN {{name}},<br> Your message is:<br> {{message}}
+<br>
+<h4 id="test">View users' consoles:</h4><br>
+{{#each users}}
+    <li><a href="#" id="{{this.name}}">{{this.name}}</a></li>
+{{/each}}
+<br><br>
+<a href="/logout">log out</a>
+
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.8/jquery.min.js"></script>
+<script>
+    $('a').click( function(event) {
+        window.open("/getUser?user=" + event.target.id, "_self")
+    });
+</script>
+</body>
+</html>
