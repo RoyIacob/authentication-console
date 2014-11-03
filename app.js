@@ -1,19 +1,19 @@
 var express = require('express');
 var app = express();
 var bodyParser  = require('body-parser');
-var Handlebars = require('handlebars');
+var Handlebars = require('handlebars'); // for html rendering
 var fs = require('fs');
-var url = require('url');
+var url = require('url'); // for url parsing
 var cookieParser = require('cookie-parser');
 
 //Assume users-pw combos are unique
 //Cookies can be spoofed.
 
-var data = fs.readFileSync('admin.html','utf8');
+var data = fs.readFileSync('templates/admin.html','utf8');
 var admin_template = Handlebars.compile(data);
-data = fs.readFileSync('user.html','utf8');
+data = fs.readFileSync('templates/user.html','utf8');
 var user_template = Handlebars.compile(data);
-data = fs.readFileSync('user_as_admin.html','utf8');
+data = fs.readFileSync('templates/user_as_admin.html','utf8');
 var user_as_admin_template = Handlebars.compile(data);
 
 app.use(cookieParser());
@@ -23,7 +23,7 @@ app.use(bodyParser.urlencoded({
 }));
 
 var load_login_page = function(res){
-    fs.readFile('index.html','utf8', function(err, data) {
+    fs.readFile('templates/index.html','utf8', function(err, data) {
         if (err) {
             res.send("Couldn't read index");
         } else
@@ -31,12 +31,14 @@ var load_login_page = function(res){
     });
 }
 
+// Clear session and return to login page
 app.get('/logout', function(req, res){
     res.clearCookie('username');
     load_login_page(res);
 });
 
-app.get('/', function(req, res) {  //index.html
+// If session exists, redirect to console. Else, redirect to login page
+app.get('/', function(req, res) {
     if (req.cookies.username) {
         if (req.cookies.username === "admin") { //logged in
             var result = admin_template(admin);
@@ -52,6 +54,7 @@ app.get('/', function(req, res) {  //index.html
     }
 });
 
+//Show admin what a user page looks like from their perspective
 app.get('/getuser', function(req, res) {
     if (req.cookies.username) {
         if (req.cookies.username === "admin") {
@@ -66,8 +69,8 @@ app.get('/getuser', function(req, res) {
     res.send("Error: restricted access ahead");
 });
 
-app.get('/login', function(req,res){ //TODO change to console
-    console.log("COOKIE:" + req.cookies.username);
+//Load user console if session exists
+app.get('/console', function(req,res){ //TODO change to console
     if (req.cookies.username) {
         if (req.cookies.username === "admin") { //logged in
             var result = admin_template(admin);
@@ -81,22 +84,22 @@ app.get('/login', function(req,res){ //TODO change to console
     }
 });
 
-app.post('/login', function(req,res){
+//Attempt user log in. Session is created here.
+app.post('/console', function(req,res){
     var user_attempt = {"name":req.body.name, "password" : req.body.password};
-    //log in as user
-    if (users.hasOwnProperty(user_attempt.name)) {
+    if (users.hasOwnProperty(user_attempt.name)) { //log in as user
         if (users[user_attempt.name].password === user_attempt.password) {
             var result = user_template(users[user_attempt.name]);
             res.cookie('username',user_attempt.name, { maxAge: 900000, httpOnly: true });
             res.send(result);
         }
     }
-    else if (user_attempt.name === admin.name && user_attempt.password === admin.password) {
+    else if (user_attempt.name === admin.name && user_attempt.password === admin.password) { // as admin
         var result = admin_template(admin);
         res.cookie('username', 'admin', { maxAge: 900000, httpOnly: true });
         res.send(result);
     }
-    else {
+    else { //redirect to login page
         load_login_page(res);
     }
 });
@@ -105,7 +108,7 @@ app.listen(8080, function(){
     console.log('listening on 8080');
 });
 
-
+//Hardcoded data
 var users = {
     "Kari Dejesus":
     {
